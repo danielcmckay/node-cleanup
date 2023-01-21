@@ -3,7 +3,7 @@ import os from "os";
 
 const homedir = os.homedir();
 
-function doCleanup() {
+export function doCleanup() {
   fs.readdir(`${homedir}/Desktop`, (err, files) => {
     if (err) {
       console.log(err);
@@ -50,7 +50,7 @@ function matchAndMoveFiles(
   console.log(`Matched ${matchedFiles.length} files, moved to ${destination}`);
 }
 
-function findOrMakeScreenshotsDir(files: string[]) {
+export function findOrMakeScreenshotsDir(files: string[]) {
   if (!files.includes("Screenshots")) {
     fs.mkdir(`${homedir}/Desktop/Screenshots`, (err) => {
       if (err) {
@@ -62,11 +62,11 @@ function findOrMakeScreenshotsDir(files: string[]) {
   }
 }
 
-function matchFiles(files: string[], pattern: RegExp): string[] {
+export function matchFiles(files: string[], pattern: RegExp): string[] {
   return files.filter((file) => pattern.test(file));
 }
 
-function moveFiles(files: string[], destination: string) {
+export function moveFiles(files: string[], destination: string) {
   files.forEach((file) => {
     fs.rename(`${homedir}/Desktop/${file}`, `${destination}/${file}`, (err) => {
       if (err) {
