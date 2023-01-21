@@ -1,46 +1,61 @@
 import fs from "fs";
 import os from "os";
+import notifier from "node-notifier";
+import path from "path";
+import { exec } from "child_process";
 
 const homedir = os.homedir();
 
 export function doCleanup() {
-  fs.readdir(`${homedir}/Desktop`, (err, files) => {
-    if (err) {
-      console.log(err);
-    } else {
-      // Clean up screenshots
-      findOrMakeScreenshotsDir(files);
-      matchAndMoveFiles(
-        files,
-        new RegExp(/screen shot/i),
-        `${homedir}/Desktop/Screenshots`
-      );
+  try {
+    fs.readdir(`${homedir}/Desktop`, (err, files) => {
+      let filesChanged = 0;
 
-      // Clean up documents
-      matchAndMoveFiles(files, new RegExp(/\.docx?$/i), `${homedir}/Documents`);
+      if (err) {
+        console.log(err);
+      } else {
+        // Clean up screenshots
+        findOrMakeScreenshotsDir(files);
+        filesChanged += matchAndMoveFiles(
+          files,
+          new RegExp(/screen shot/i),
+          `${homedir}/Desktop/Screenshots`
+        );
 
-      // Clean up images
-      matchAndMoveFiles(
-        files,
-        new RegExp(/\.(png|jpg|jpeg)$/i),
-        `${homedir}/Pictures`
-      );
+        // Clean up documents
+        filesChanged += matchAndMoveFiles(
+          files,
+          new RegExp(/\.docx?$/i),
+          `${homedir}/Documents`
+        );
 
-      // Clean up videos
-      matchAndMoveFiles(
-        files,
-        new RegExp(/\.(mp4|mov)$/i),
-        `${homedir}/Movies`
-      );
-    }
-  });
+        // Clean up images
+        filesChanged += matchAndMoveFiles(
+          files,
+          new RegExp(/\.(png|jpg|jpeg)$/i),
+          `${homedir}/Pictures`
+        );
+
+        // Clean up videos
+        filesChanged += matchAndMoveFiles(
+          files,
+          new RegExp(/\.(mp4|mov)$/i),
+          `${homedir}/Movies`
+        );
+
+        fireNotification("Moved " + filesChanged + " files!");
+      }
+    });
+  } catch (err) {
+    fireNotification("Error: " + err);
+  }
 }
 
 function matchAndMoveFiles(
   files: string[],
   pattern: RegExp,
   destination: string
-) {
+): number {
   console.log(`Matching files with pattern ${pattern}`);
 
   const matchedFiles = matchFiles(files, pattern);
@@ -48,6 +63,8 @@ function matchAndMoveFiles(
   moveFiles(matchedFiles, destination);
 
   console.log(`Matched ${matchedFiles.length} files, moved to ${destination}`);
+
+  return matchedFiles.length;
 }
 
 export function findOrMakeScreenshotsDir(files: string[]) {
@@ -77,5 +94,21 @@ export function moveFiles(files: string[], destination: string) {
     });
   });
 }
+
+function fireNotification(message: string) {
+  notifier.notify({
+    title: "Desktop cleanup",
+    message,
+    wait: true,
+    icon: path.join(__dirname, "/assets/app-icon.png"),
+    actions: ["View in Finder"],
+  });
+}
+
+notifier.on("click", function (event) {
+  if (event.activationType === "actionClicked") {
+    exec(`open ${homedir}/Desktop`);
+  }
+});
 
 doCleanup();
