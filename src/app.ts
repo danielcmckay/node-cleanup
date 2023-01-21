@@ -43,7 +43,9 @@ export function doCleanup() {
           `${homedir}/Movies`
         );
 
-        fireNotification("Moved " + filesChanged + " files!");
+        fireNotification(
+          `Moved ${pluralize(filesChanged, "file")}!`
+        );
       }
     });
   } catch (err) {
@@ -99,16 +101,21 @@ function fireNotification(message: string) {
   notifier.notify({
     title: "Desktop cleanup",
     message,
-    wait: true,
+    timeout: 10,
     icon: path.join(__dirname, "/assets/app-icon.png"),
     actions: ["View in Finder"],
+    sound: "Bubble",
   });
 }
 
-notifier.on("click", function (event) {
+notifier.on("click", function (_, __, event) {
   if (event.activationType === "actionClicked") {
     exec(`open ${homedir}/Desktop`);
   }
 });
+
+function pluralize(count: number, noun: string, suffix = "s") {
+  return `${count} ${noun}${count !== 1 ? suffix : ""}`;
+}
 
 doCleanup();
